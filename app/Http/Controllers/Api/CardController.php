@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CardResource;
+use App\Models\AppMetadata;
 use App\Models\Card;
 use Illuminate\Http\Request;
 
@@ -25,12 +26,22 @@ class CardController extends Controller
             })
             ->get();
 
-        return CardResource::collection($cards);
+        $metadata = AppMetadata::first();
+
+        return response()->json([
+            'data' => CardResource::collection($cards),
+            'metadata' => [
+                'version' => $metadata ? $metadata->version : '1.0.0'
+            ]
+        ]);
     }
 
-    public function show(Card $card)
+    public function metadata()
     {
-        $card->load(['extension', 'rarity', 'boosters']);
-        return new CardResource($card);
+        $metadata = AppMetadata::first();
+
+        return response()->json([
+            'version' => $metadata ? $metadata->version : '1.0.0'
+        ]);
     }
 }
