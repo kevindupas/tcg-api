@@ -17,5 +17,5 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('v1')->group(function () {
     Route::get('/cards', [CardController::class, 'index']);
-    Route::get('/cards/{card}', [CardController::class, 'show']);
+    Route::get('/version', [CardController::class, 'metadata']);
 });
