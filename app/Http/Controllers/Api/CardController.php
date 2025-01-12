@@ -7,6 +7,7 @@ use App\Http\Resources\CardResource;
 use App\Models\AppMetadata;
 use App\Models\Card;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CardController extends Controller
 {
@@ -47,10 +48,27 @@ class CardController extends Controller
     {
         $currentVersion = $request->version;
 
+        // Si pas de version fournie, on renvoie une erreur
+        if (empty($currentVersion)) {
+            return response()->json([
+                'error' => 'Version parameter is required'
+            ], 400);
+        }
+
+        Log::info('Version reçue: ' . $currentVersion);
+
         $allCards = Card::with(['extension', 'rarity', 'boosters'])->get();
 
         $newCards = $allCards->filter(function ($card) use ($currentVersion) {
-            return version_compare($card->version_added, $currentVersion, '>');
+            // S'assurer que version_added n'est pas vide
+            if (empty($card->version_added)) {
+                $card->version_added = '0.0.1';
+            }
+
+            Log::info("Comparaison: {$card->id} - {$card->name_fr} - Version: {$card->version_added} vs {$currentVersion}");
+            $comparison = version_compare($card->version_added, $currentVersion, '>');
+            Log::info("Résultat de la comparaison: " . ($comparison ? 'true' : 'false'));
+            return $comparison;
         });
 
         $metadata = $this->getLatestPublishedVersion();
