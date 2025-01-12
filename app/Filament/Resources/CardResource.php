@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\CardResource\Pages;
 use App\Filament\Resources\CardResource\RelationManagers;
+use App\Models\AppMetadata;
 use App\Models\Card;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -47,6 +48,10 @@ class CardResource extends Resource
                     ->required()
                     ->numeric()
                     ->label('Nombre de Rareté'),
+                Forms\Components\Hidden::make('version_added')
+                    ->default(function () {
+                        return AppMetadata::first()?->version ?? '1.0.0';
+                    })
             ]);
     }
 

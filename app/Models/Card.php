@@ -15,7 +15,8 @@ class Card extends Model
         'image',
         'number',
         'rarity_type',
-        'rarity_number'
+        'rarity_number',
+        'version_added'
     ];
 
     public function extension(): BelongsTo

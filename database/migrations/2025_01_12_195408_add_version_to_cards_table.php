@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('app_metadata', function (Blueprint $table) {
-            $table->id();
-            $table->string('version');
-            $table->boolean('published')->default(false);
-            $table->timestamps();
+        Schema::table('cards', function (Blueprint $table) {
+            $table->string('version_added')->default('0.0.1');
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('app_metadata');
+        Schema::table('cards', function (Blueprint $table) {
+            //
+        });
     }
 };

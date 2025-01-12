@@ -25,7 +25,12 @@ class AppMetadataResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('version')
                     ->required()
-                    ->helperText('Modifier ce numéro pour forcer une mise à jour sur les applications')
+                    ->helperText('Numéro de version (ex: 0.0.6)'),
+
+                Forms\Components\Toggle::make('published')
+                    ->label('Publier')
+                    ->helperText('Activer pour rendre cette version disponible aux utilisateurs')
+                    ->default(false)
             ]);
     }
 
@@ -34,8 +39,12 @@ class AppMetadataResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('version'),
+                Tables\Columns\IconColumn::make('published')
+                    ->boolean()
+                    ->label('Publiée'),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
+                    ->label('Dernière modification')
             ])
             ->filters([
                 //

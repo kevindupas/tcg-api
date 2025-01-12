@@ -10,6 +10,13 @@ use Illuminate\Http\Request;
 
 class CardController extends Controller
 {
+    private function getLatestPublishedVersion()
+    {
+        return AppMetadata::where('published', true)
+            ->latest()
+            ->first();
+    }
+
     public function index(Request $request)
     {
         $cards = Card::with(['extension', 'rarity', 'boosters'])
@@ -26,7 +33,7 @@ class CardController extends Controller
             })
             ->get();
 
-        $metadata = AppMetadata::first();
+        $metadata = $this->getLatestPublishedVersion();
 
         return response()->json([
             'data' => CardResource::collection($cards),
@@ -36,12 +43,37 @@ class CardController extends Controller
         ]);
     }
 
-    public function metadata()
+    public function updates(Request $request)
     {
-        $metadata = AppMetadata::first();
+        $currentVersion = $request->version;
+
+        $newCards = Card::with(['extension', 'rarity', 'boosters'])
+            ->where('version_added', '>', $currentVersion)
+            ->whereExists(function ($query) use ($currentVersion) {
+                $query->select('id')
+                    ->from('app_metadata')
+                    ->where('published', true)
+                    ->where('version', '>', $currentVersion);
+            })
+            ->get();
+
+        $metadata = $this->getLatestPublishedVersion();
 
         return response()->json([
-            'version' => $metadata ? $metadata->version : '1.0.0'
+            'data' => CardResource::collection($newCards),
+            'metadata' => [
+                'version' => $metadata ? $metadata->version : '1.0.0'
+            ]
+        ]);
+    }
+
+    public function metadata()
+    {
+        $metadata = $this->getLatestPublishedVersion();
+
+        return response()->json([
+            'version' => $metadata ? $metadata->version : '1.0.0',
+            'total_cards' => Card::count()
         ]);
     }
 }
