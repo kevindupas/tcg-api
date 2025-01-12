@@ -47,15 +47,11 @@ class CardController extends Controller
     {
         $currentVersion = $request->version;
 
-        $newCards = Card::with(['extension', 'rarity', 'boosters'])
-            ->where('version_added', '>', $currentVersion)
-            ->whereExists(function ($query) use ($currentVersion) {
-                $query->select('id')
-                    ->from('app_metadata')
-                    ->where('published', true)
-                    ->where('version', '>', $currentVersion);
-            })
-            ->get();
+        $allCards = Card::with(['extension', 'rarity', 'boosters'])->get();
+
+        $newCards = $allCards->filter(function ($card) use ($currentVersion) {
+            return version_compare($card->version_added, $currentVersion, '>');
+        });
 
         $metadata = $this->getLatestPublishedVersion();
 
