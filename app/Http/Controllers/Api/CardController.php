@@ -20,7 +20,17 @@ class CardController extends Controller
 
     public function index(Request $request)
     {
+        // On récupère d'abord la dernière version publiée
+        $latestVersion = $this->getLatestPublishedVersion();
+
+        if (!$latestVersion) {
+            return response()->json([
+                'error' => 'No published version available'
+            ], 404);
+        }
+
         $cards = Card::with(['extension', 'rarity', 'boosters'])
+            ->where('version_added', '<=', $latestVersion->version)
             ->when($request->filled('extension'), function ($query) use ($request) {
                 $query->where('extension_id', $request->extension);
             })
@@ -34,60 +44,80 @@ class CardController extends Controller
             })
             ->get();
 
-        $metadata = $this->getLatestPublishedVersion();
-
         return response()->json([
             'data' => CardResource::collection($cards),
             'metadata' => [
-                'version' => $metadata ? $metadata->version : '1.0.0'
+                'version' => $latestVersion->version,
+                'total_cards' => $cards->count()
             ]
         ]);
     }
 
     public function updates(Request $request)
     {
-        $currentVersion = $request->version;
+        $currentVersion = $request->query('version');
 
-        // Si pas de version fournie, on renvoie une erreur
-        if (empty($currentVersion)) {
+        if (!$currentVersion) {
             return response()->json([
                 'error' => 'Version parameter is required'
             ], 400);
         }
 
-        Log::info('Version reçue: ' . $currentVersion);
+        $latestVersion = $this->getLatestPublishedVersion();
 
-        $allCards = Card::with(['extension', 'rarity', 'boosters'])->get();
+        if (!$latestVersion) {
+            return response()->json([
+                'error' => 'No published version available'
+            ], 404);
+        }
 
-        $newCards = $allCards->filter(function ($card) use ($currentVersion) {
-            // S'assurer que version_added n'est pas vide
-            if (empty($card->version_added)) {
-                $card->version_added = '0.0.1';
-            }
+        // Si la version actuelle est plus récente ou égale à la dernière version publiée
+        if (version_compare($currentVersion, $latestVersion->version, '>=')) {
+            return response()->json([
+                'data' => [],
+                'metadata' => [
+                    'version' => $latestVersion->version,
+                    'needs_update' => false
+                ]
+            ]);
+        }
 
-            Log::info("Comparaison: {$card->id} - {$card->name_fr} - Version: {$card->version_added} vs {$currentVersion}");
-            $comparison = version_compare($card->version_added, $currentVersion, '>');
-            Log::info("Résultat de la comparaison: " . ($comparison ? 'true' : 'false'));
-            return $comparison;
-        });
+        // Récupérer toutes les cartes ajoutées après la version actuelle du client
+        // jusqu'à la dernière version publiée
+        $newCards = Card::with(['extension', 'rarity', 'boosters'])
+            ->where('version_added', '>', $currentVersion)
+            ->where('version_added', '<=', $latestVersion->version)
+            ->get();
 
-        $metadata = $this->getLatestPublishedVersion();
+        Log::info("Mise à jour demandée", [
+            'current_version' => $currentVersion,
+            'latest_version' => $latestVersion->version,
+            'new_cards_count' => $newCards->count()
+        ]);
 
         return response()->json([
             'data' => CardResource::collection($newCards),
             'metadata' => [
-                'version' => $metadata ? $metadata->version : '1.0.0'
+                'version' => $latestVersion->version,
+                'needs_update' => true,
+                'new_cards_count' => $newCards->count()
             ]
         ]);
     }
 
     public function metadata()
     {
-        $metadata = $this->getLatestPublishedVersion();
+        $latestVersion = $this->getLatestPublishedVersion();
+
+        if (!$latestVersion) {
+            return response()->json([
+                'error' => 'No published version available'
+            ], 404);
+        }
 
         return response()->json([
-            'version' => $metadata ? $metadata->version : '1.0.0',
-            'total_cards' => Card::count()
+            'version' => $latestVersion->version,
+            'total_cards' => Card::where('version_added', '<=', $latestVersion->version)->count()
         ]);
     }
 }

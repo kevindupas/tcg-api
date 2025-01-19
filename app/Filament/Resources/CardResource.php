@@ -50,7 +50,20 @@ class CardResource extends Resource
                     ->label('Nombre de Rareté'),
                 Forms\Components\Hidden::make('version_added')
                     ->default(function () {
-                        return AppMetadata::first()?->version ?? '1.0.0';
+                        // Récupérer la dernière version non publiée
+                        $latestUnpublishedVersion = AppMetadata::where('published', false)
+                            ->latest()
+                            ->first();
+
+                        // Si aucune version non publiée n'existe, prendre la dernière version publiée
+                        if (!$latestUnpublishedVersion) {
+                            $latestPublishedVersion = AppMetadata::where('published', true)
+                                ->latest()
+                                ->first();
+                            return $latestPublishedVersion?->version ?? '1.0.0';
+                        }
+
+                        return $latestUnpublishedVersion->version;
                     })
             ]);
     }
@@ -73,6 +86,8 @@ class CardResource extends Resource
                     ->label('Rareté'),
                 Tables\Columns\TextColumn::make('rarity_number')
                     ->label('Nombre de Rareté'),
+                Tables\Columns\TextColumn::make('version_added')
+                    ->label('Version ajoutée'),
             ])
             // ->filters([
             //     Tables\Filters\SelectFilter::make('booster_id')
