@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ExtensionController;
+use App\Http\Controllers\Api\V1\VersionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -10,7 +11,7 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::prefix('v1')->group(function () {
+    Route::get('/version', [VersionController::class, 'getLatestVersion']);
     Route::get('/cards', [CardController::class, 'index']);
     Route::get('/cards/updates', [CardController::class, 'updates']);
-    Route::get('/version', [CardController::class, 'metadata']);
 });
