@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\CardResource;
 use App\Models\AppMetadata;
 use App\Models\Card;
 use Illuminate\Http\Request;

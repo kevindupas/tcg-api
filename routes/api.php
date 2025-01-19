@@ -1,8 +1,7 @@
 <?php
 
-use App\Http\Controllers\Api\CardController;
-use App\Http\Controllers\Api\ExtensionController;
-use App\Http\Controllers\Api\V1\VersionController;
+use App\Http\Controllers\Api\v1\CardController;
+use App\Http\Controllers\Api\v1\VersionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
